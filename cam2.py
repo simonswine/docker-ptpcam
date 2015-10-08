@@ -30,7 +30,7 @@ class Heartbeat(threading.Thread):
             'id': str(uuid.uuid4()),
             'serviceName': 'cam2',
         })
-        self.getProducer().send_messages(b'heartbeat', data)
+        self.getProducer().send_messages(b'heartbeats', data)
 
     def run(self):
         while True:
