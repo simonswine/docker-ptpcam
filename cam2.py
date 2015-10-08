@@ -42,21 +42,22 @@ def takePicture():
 
     if not os.path.isfile(imagePath):
         logging.warn("Error during taking picture")
+	return
 
     with open(imagePath, "rb") as imageFile:
         imageEncoded = base64.b64encode(imageFile.read())
 
         upload = {
-            'id': uuid.uuid4(),
+            'id': str(uuid.uuid4()),
             'picture': imageEncoded,
             'takenTime': int(time.time()),
             'ride': 'cam2',
         }
-
-        kafka = KafkaClient('192.168.6.27:9092')
+	data = json.dumps(upload)
+	logging.info("Message size %d" % len(data))
+        kafka = KafkaClient('192.168.7.248:9092')
         producer = SimpleProducer(kafka)
-        producer.send_messages(b'pictures', json.dumps(upload))
-
+        producer.send_messages(b'pictures', data)
 
 def main():
     logging.basicConfig(level=logging.DEBUG)
@@ -95,8 +96,11 @@ def main():
             buffer="\x00\x00\x00\x00\x00\x00\x00\x02"
         )
 
-    try:
-        result = handle.interruptRead(endpoint.address, endpoint.maxPacketSize)
+        try:
+            result = handle.interruptRead(endpoint.address, endpoint.maxPacketSize)
+        except Exception:
+            continue
+
         if result[0] == 22:
             button_depressed = 1
         else:
@@ -110,11 +114,9 @@ def main():
 
         button_depressed_last = button_depressed
 
-    except Exception:
-        pass
 
     time.sleep(endpoint.interval * 0.001)  # 10ms
-
+    
     handle.releaseInterface(interface)
     logging.info('Finished')
 
