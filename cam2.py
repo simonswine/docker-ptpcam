@@ -9,9 +9,35 @@ import subprocess
 import uuid
 import json
 import base64
+import threading
 from kafka import SimpleProducer, KafkaClient
 
 
+kafka_server = '192.168.7.248:9092'
+
+class Heartbeat(threading.Thread):
+    producer = None
+
+    def getProducer(self):
+        if self.producer is None:
+            kafka = KafkaClient(kafka_server)
+            self.producer = SimpleProducer(kafka)
+        return self.producer
+
+    def heartbeat(self):
+        data = json.dumps({
+            'status': 200,
+            'id': str(uuid.uuid4()),
+            'serviceName': 'cam2',
+        })
+        self.getProducer().send_messages(b'heartbeat', data)
+
+    def run(self):
+        while True:
+            self.heartbeat()
+            logging.info('Sent heartbeat!!')
+            time.sleep(5)
+    
 def onButtonDown():
     logging.info('BIG RED BUTTON PRESSED!!')
 
@@ -42,7 +68,7 @@ def takePicture():
 
     if not os.path.isfile(imagePath):
         logging.warn("Error during taking picture")
-	return
+    return
 
     with open(imagePath, "rb") as imageFile:
         imageEncoded = base64.b64encode(imageFile.read())
@@ -53,15 +79,19 @@ def takePicture():
             'takenTime': int(time.time()),
             'ride': 'cam2',
         }
-	data = json.dumps(upload)
-	logging.info("Message size %d" % len(data))
-        kafka = KafkaClient('192.168.7.248:9092')
-        producer = SimpleProducer(kafka)
-        producer.send_messages(b'pictures', data)
+    data = json.dumps(upload)
+    logging.info("Message size %d" % len(data))
+    
+    kafka = KafkaClient(kafka_server)
+    producer = SimpleProducer(kafka)
+    producer.send_messages(b'pictures', data)
 
 def main():
     logging.basicConfig(level=logging.DEBUG)
     logging.info('Started')
+
+    t = Heartbeat()
+    t.start()
 
     dev = findButton()
     if dev is None:

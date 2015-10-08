@@ -1,0 +1,6 @@
+cam:
+  build: .
+  volumes:
+   - /dev/bus/usb:/dev/bus/usb
+  privileged: true
+  restart: always
