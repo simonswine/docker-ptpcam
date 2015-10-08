@@ -2,7 +2,7 @@ FROM ubuntu:trusty
 
 RUN \
     apt-get update && \
-    apt-get install -y lua5.2 wget unzip libcairo2 libgtk2.0-0 && \
+    apt-get install -y lua5.2 wget unzip libcairo2 libgtk2.0-0 python-pip libusb-1.0.0-dev && \
     rm -rf /var/lib/apt/lists/*
 
 RUN wget https://www.assembla.com/spaces/chdkptp/documents/bEQP3wxwir5ikeacwqEsg8/download/bEQP3wxwir5ikeacwqEsg8?notinline=true -O /tmp/chdkptp.zip && \
@@ -28,3 +28,10 @@ RUN wget http://sourceforge.net/projects/canvasdraw/files/5.9/Linux%20Libraries/
 ENV LD_LIBRARY_PATH=/usr/local/iup:/usr/local/cd
 ENV LUA_PATH=/usr/local/chdkptp/lua/?.lua
 ENV PATH=${PATH}:/usr/local/chdkptp
+
+ADD requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt 
+ADD cam2.py /usr/local/bin/cam2
+RUN chmod +x /usr/local/bin/cam2
+CMD /usr/local/bin/cam2
+
